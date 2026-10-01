@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BDC Connecté — prototype V2</title>
+<style>
+:root{--green:#174c3c;--green2:#e6f2ed;--bg:#f4f6f8;--card:#fff;--line:#dfe5e9;--txt:#17212b;--muted:#697681;--red:#b42318;--redbg:#fff0ee;--shadow:0 8px 28px rgba(20,35,45,.08)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{background:linear-gradient(135deg,#173e33,#23614f);color:#fff;padding:16px}.head{max-width:1050px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:10px}.brand{font-size:19px;font-weight:800}.brand small{display:block;font-size:10px;opacity:.72;font-weight:500}.switch{display:flex;background:#ffffff20;border-radius:11px;padding:3px}.switch button{border:0;background:transparent;color:#fff;padding:8px 11px;border-radius:8px;font-weight:800;cursor:pointer}.switch .on{background:#fff;color:var(--green)}
+main{max-width:1050px;margin:20px auto;padding:0 15px}.screen{display:none}.screen.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:17px;padding:17px;box-shadow:var(--shadow);margin-bottom:15px}
+h1{font-size:27px;margin:0 0 5px}.sub{font-size:13px;color:var(--muted);line-height:1.45}h2{font-size:18px;margin:0 0 11px}
+label{font-size:11px;font-weight:800;color:#5d6973;text-transform:uppercase;display:block;margin-bottom:6px}
+select,input{width:100%;padding:12px;border:1px solid #cbd4da;border-radius:10px;background:#fff;font-size:15px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;margin-bottom:15px}.deadline{padding:11px 13px;border-radius:12px;font-size:12px;font-weight:800}.ok{background:#e7f5ed;color:#12633f}.no{background:var(--redbg);color:var(--red)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}.fridges{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.fridge{border:1px solid var(--line);border-radius:13px;padding:12px;cursor:pointer}.fridge.sel{border:2px solid var(--green);background:var(--green2);padding:11px}.fridge b{display:block}.fridge small{color:var(--muted)}
+.qtyrow{display:grid;grid-template-columns:1fr 90px;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #edf0f2}.qtyrow:last-child{border:0}.cat{font-weight:800;font-size:15px}.cat small{display:block;color:var(--muted);font-size:11px;font-weight:500;margin-top:2px}
+.step{display:flex;align-items:center;gap:6px}.step button{width:34px;height:34px;border:1px solid #cbd4da;background:#fff;border-radius:9px;font-size:20px;cursor:pointer}.qty{width:25px;text-align:center;font-weight:900}
+.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}.pill{background:#edf3f1;color:#245a4a;padding:5px 8px;border-radius:99px;font-size:11px;font-weight:800}
+.btn{border:0;border-radius:11px;padding:12px 15px;font-weight:800;cursor:pointer}.primary{background:var(--green);color:#fff}.secondary{background:#eef2f4;color:#27343d}.btn:disabled{opacity:.45;cursor:not-allowed}
+.actions{display:flex;justify-content:flex-end;gap:9px}.notice{padding:12px;border-radius:11px;margin-top:10px;font-size:13px}.warn{background:#fff7e8;color:#8a5a00}.success{background:#e7f5ed;color:#12633f}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.sum{border:1px solid var(--line);border-radius:12px;padding:12px}.sum b{display:block;font-size:24px}.sum span{font-size:11px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left}th{font-size:10px;text-transform:uppercase;color:var(--muted)}
+.empty{text-align:center;color:var(--muted);padding:30px}.labdate{margin-bottom:15px}.labcat{margin-top:12px}.labcat h3{font-size:15px;margin:0 0 7px}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.fridges{grid-template-columns:1fr}.summary{grid-template-columns:1fr 1fr}.top{display:block}.deadline{margin-top:10px}.actions{position:sticky;bottom:8px;background:#f4f6f8;padding-top:8px}}
+</style>
+</head>
+<body>
+<header><div class="head">
+<div class="brand">🛒 BDC Connecté <small>Prototype V2 — commande par catégorie et par frigo</small></div>
+<div class="switch"><button id="bm" class="on" onclick="mode('m')">📱 Gestionnaire</button><button id="bl" onclick="mode('l')">🏭 Laboratoire</button></div>
+</div></header>
+
+<main>
+<section id="m" class="screen on">
+<div class="top"><div><h1>Passer une commande</h1><div class="sub">Le gestionnaire commande uniquement des <b>quantités</b>. Le laboratoire choisit ensuite les recettes.</div></div><div id="deadline" class="deadline ok">Vérification…</div></div>
+
+<div class="grid">
+<div>
+<div class="card">
+<h2>① Agence</h2>
+<label>Agence</label><select id="agency" onchange="agencyChanged()"></select>
+<div style="height:13px"></div>
+<label>Date de réception en C</label><input id="delivery" type="date" onchange="refresh()">
+<div id="datehelp" class="sub" style="margin-top:7px"></div>
+</div>
+<div class="card">
+<div class="section-title"><h2>② Frigos connectés</h2><span class="pill" id="fridgeCount">0 sélectionné</span></div>
+<div class="sub" style="margin-bottom:10px">Une agence peut avoir plusieurs frigos. Sélectionnez un ou plusieurs frigos : les quantités seront saisies séparément pour chacun.</div>
+<div id="fridges" class="fridges"></div>
+</div>
+</div>
+
+<div class="card">
+<div class="section-title"><h2>③ Quantités à commander</h2><span class="pill">3 catégories uniquement</span></div>
+<div class="sub" style="margin-bottom:10px">Aucune recette n'est choisie ici. Le laboratoire répartira ensuite les quantités entre les références disponibles.</div>
+<div id="qtyarea"></div>
+</div>
+</div>
+
+<div class="card">
+<h2>④ Récapitulatif</h2>
+<div id="summary" class="empty">Sélectionnez au moins un frigo.</div>
+<div id="msg"></div>
+<div class="actions"><button class="btn secondary" onclick="resetOrder()">Réinitialiser</button><button id="send" class="btn primary" onclick="send()">✅ Envoyer la commande</button></div>
+</div>
+</section>
+
+<section id="l" class="screen">
+<div class="top"><div><h1>Vue laboratoire</h1><div class="sub">Les commandes sont regroupées par date, catégorie, agence et frigo. <b>Aucune recette n'est imposée par le gestionnaire.</b></div></div><button class="btn secondary" onclick="clearOrders()">Effacer la démo</button></div>
+<div class="summary">
+<div class="sum"><b id="ko">0</b><span>commandes</span></div><div class="sum"><b id="ku">0</b><span>unités</span></div><div class="sum"><b id="kf">0</b><span>frigos</span></div>
+</div>
+<div id="lab" style="margin-top:15px"></div>
+</section>
+</main>
+
+<script>
+const A={"X01_La Rochelle": ["1B2L", "Apivia", "Cipecma 1", "Cipecma 2", "Excel", "Excelia Coureilles", "Excelia La sole", "Merling", "Systel", "Wartsila"], "X02_Niort": [], "X03_Saintes": [], "X04_Poitiers": ["Excelia Tours"], "X05_Chambray_Les_Tours": [], "X06_Nantes": ["Clinique saumur", "Semitan"], "X07_SaintAve": [], "X08_Bordeaux": [], "X09_La_Roche_sur_Yon": [], "X10_Rennes": ["DS Smith", "Ucobs"], "X11_Brest": [], "X12_Toulouse": [], "X13_Ambres": [], "X14_Limoges": [], "X15_Soyaux": [], "X16_Saint_Pantaléon_de_Larche": [], "X17_Lannion": [], "X18_Pontchateau": [], "X19_Beaucouze": [], "X20_Perigueux": [], "X21_Chateauroux": [], "X22_Orthez": [], "X23_Louverne": [], "X24_Floirac": [], "X26_La_Chapelle_Saint_Mesmin": []};
+const cats=["WRAPS","SALADES","DESSERTS"];
+let orders=JSON.parse(localStorage.getItem("bdc_v2_orders")||"[]");
+let state={selected:[],q:{}};
+
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,"0");
+const iso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const fr=d=>`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+function cutoff(del){let d=new Date(del+"T12:00:00");d.setDate(d.getDate()-2);return d}
+function open(del){return del && new Date()<=cutoff(del)}
+function nextDate(){let d=new Date();d.setHours(0,0,0,0);for(let i=1;i<15;i++){let x=new Date(d);x.setDate(d.getDate()+i);if(x.getDay()!=0&&x.getDay()!=6&&open(iso(x)))return x}return new Date(d.getTime()+86400000)}
+function init(){
+ $("agency").innerHTML=Object.keys(A).map(x=>`<option value="${x}">${x.replaceAll("_"," ")}</option>`).join("");
+ $("delivery").value=iso(nextDate()); $("delivery").min=iso(new Date());
+ agencyChanged(); renderLab();
+}
+function agencyChanged(){
+ state.selected=[];state.q={};let a=$("agency").value, fs=A[a]||[];
+ $("fridgeCount").textContent="0 sélectionné";
+ $("fridges").innerHTML=fs.length?fs.map((f,i)=>`<div class="fridge" id="f${i}" onclick="toggleFridge(${i})"><b>🧊 ${f}</b><small>Frigo connecté</small></div>`).join(""):`<div class="notice warn">⚠️ Aucun frigo connecté n'est renseigné pour cette agence dans le BDC actuel.</div>`;
+ renderQty();refresh();
+}
+function toggleFridge(i){
+ let a=A[$("agency").value],f=a[i]; if(state.selected.includes(f))state.selected=state.selected.filter(x=>x!==f);else state.selected.push(f);
+ a.forEach((f,j)=>$("f"+j)?.classList.toggle("sel",state.selected.includes(f)));
+ $("fridgeCount").textContent=`${state.selected.length} sélectionné${state.selected.length>1?"s":""}`;
+ renderQty();refresh();
+}
+function renderQty(){
+ if(!state.selected.length){$("qtyarea").innerHTML='<div class="empty">Sélectionnez un frigo pour saisir les quantités.</div>';return}
+ $("qtyarea").innerHTML=state.selected.map(f=>`<div class="card" style="box-shadow:none;background:#fafcfc;margin:0 0 10px"><div class="section-title"><h3>🧊 ${f}</h3><span class="pill">Quantités</span></div>`+
+ cats.map(c=>`<div class="qtyrow"><div class="cat">${c}<small>Le laboratoire choisira les recettes</small></div><div class="step"><button onclick="chg('${f}','${c}',-1)">−</button><span class="qty">${state.q[f+"|"+c]||0}</span><button onclick="chg('${f}','${c}',1)">+</button></div></div>`).join("")+"</div>").join("");
+}
+function chg(f,c,n){let k=f+"|"+c;state.q[k]=Math.max(0,(state.q[k]||0)+n);renderQty();refresh()}
+function total(){return Object.values(state.q).reduce((a,b)=>a+b,0)}
+function refresh(){
+ let d=$("delivery").value, ok=open(d), cut=d?cutoff(d):null;
+ $("deadline").className="deadline "+(ok?"ok":"no");
+ $("deadline").textContent=ok?`🟢 Ouverte — avant ${fr(cut)} à 12h00`:`🔴 Délai dépassé — commande fermée`;
+ $("datehelp").innerHTML=d?(ok?`Pour une réception en C le <b>${fr(new Date(d+"T12:00:00"))}</b>, la commande doit être passée en A avant le <b>${fr(cut)} à 12h00</b>.`:`Cette date n'est plus commandable. Choisissez une autre date.`):"";
+ let lines=Object.entries(state.q).filter(([k,v])=>v>0);
+ $("summary").innerHTML=lines.length?lines.map(([k,v])=>{let [f,c]=k.split("|");return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #edf0f2"><span>🧊 ${f} — ${c}</span><b>${v}</b></div>`}).join("")+`<div style="display:flex;justify-content:space-between;padding:10px 0"><b>TOTAL</b><b>${total()} unités</b></div>`:'<div class="empty">Aucune quantité saisie.</div>';
+ $("send").disabled=!ok||!state.selected.length||total()==0;
+}
+function send(){
+ let d=$("delivery").value;if(!open(d)||!state.selected.length||!total())return;
+ let items=Object.entries(state.q).filter(([k,v])=>v>0).map(([k,v])=>{let [fridge,category]=k.split("|");return {fridge,category,qty:v}});
+ orders.push({id:Date.now(),agency:$("agency").value,delivery:d,items,created:new Date().toISOString()});
+ localStorage.setItem("bdc_v2_orders",JSON.stringify(orders));
+ $("msg").innerHTML='<div class="notice success">✅ Commande enregistrée. Elle est maintenant visible côté laboratoire.</div>';
+ resetState(false);renderLab();
+}
+function resetState(clearMsg=true){state.selected=[];state.q={};agencyChanged();if(clearMsg)$("msg").innerHTML=""}
+function resetOrder(){state.selected=[];state.q={};$("msg").innerHTML="";agencyChanged()}
+function mode(x){$("m").classList.toggle("on",x=="m");$("l").classList.toggle("on",x=="l");$("bm").classList.toggle("on",x=="m");$("bl").classList.toggle("on",x=="l");if(x=="l")renderLab()}
+function renderLab(){
+ let by={};orders.forEach(o=>(by[o.delivery]??=[]).push(o));
+ let units=0,fridges=new Set();orders.forEach(o=>o.items.forEach(i=>{units+=i.qty;fridges.add(o.agency+"|"+i.fridge)}));
+ $("ko").textContent=orders.length;$("ku").textContent=units;$("kf").textContent=fridges.size;
+ let dates=Object.keys(by).sort();if(!dates.length){$("lab").innerHTML='<div class="card empty">Aucune commande. Passez une commande dans Gestionnaire pour voir le regroupement.</div>';return}
+ $("lab").innerHTML=dates.map(d=>{
+   let rows=[];
+   by[d].forEach(o=>o.items.forEach(i=>rows.push({agency:o.agency,fridge:i.fridge,cat:i.category,qty:i.qty})));
+   let totals={};rows.forEach(r=>{totals[r.cat]=(totals[r.cat]||0)+r.qty});
+   return `<div class="card labdate"><div class="section-title"><div><h2>📅 Réception ${fr(new Date(d+"T12:00:00"))}</h2><div class="sub">${by[d].length} commande(s)</div></div><span class="pill">À préparer</span></div>`+
+   cats.map(c=>`<div class="labcat"><h3>${c} — <b>${totals[c]||0}</b> unités</h3><table><thead><tr><th>Agence</th><th>Frigo</th><th>Quantité</th></tr></thead><tbody>`+
+   rows.filter(r=>r.cat==c).map(r=>`<tr><td>${r.agency.replaceAll("_"," ")}</td><td>🧊 ${r.fridge}</td><td><b>${r.qty}</b></td></tr>`).join("")+
+   (rows.some(r=>r.cat==c)?"":"<tr><td colspan='3' style='color:#87919a'>Aucune commande</td></tr>")+
+   `</tbody></table></div>`).join("")+`</div>`
+ }).join("");
+}
+function clearOrders(){orders=[];localStorage.removeItem("bdc_v2_orders");renderLab()}
+init();
+</script>
+</body></html>
